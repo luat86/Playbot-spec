@@ -33,10 +33,14 @@ import {
   Box,
   DoorOpen,
   Component,
-  GripVertical
+  GripVertical,
+  Key,
+  LogOut
 } from 'lucide-react';
 
 const App = () => {
+  const [userApiKey, setUserApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('gemini_api_key'));
   const [activeTab, setActiveTab] = useState('structure');
   const [isGenerating, setIsGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -228,7 +232,7 @@ const App = () => {
         setIsGenerating(false);
       } else {
         try {
-          const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+          const ai = new GoogleGenAI({ apiKey: userApiKey });
           const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: `Cung cấp thông số kỹ thuật và tiêu chuẩn nghiệm thu cho vật liệu xây dựng: "${itemToAdd.item}". Trả về tiếng Việt.`,
@@ -339,7 +343,7 @@ const App = () => {
       setIsGenerating(false);
     } else {
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+        const ai = new GoogleGenAI({ apiKey: userApiKey });
         const response = await ai.models.generateContent({
           model: "gemini-3-flash-preview",
           contents: `Cung cấp thông số kỹ thuật và tiêu chuẩn nghiệm thu cho vật liệu xây dựng: "${newItem.item}". Trả về tiếng Việt.`,
@@ -429,6 +433,53 @@ const App = () => {
     }
   };
 
+  if (!isLoggedIn) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-inter">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner rotate-3">
+              <ShieldCheck size={32} />
+            </div>
+          </div>
+          <h1 className="text-2xl font-black text-center text-slate-800 mb-2 uppercase tracking-tighter">ĐĂNG NHẬP HỆ THỐNG</h1>
+          <p className="text-center text-sm text-slate-500 mb-8 font-medium">Vui lòng nhập <span className="font-bold text-slate-700">Google Gemini API Key</span> để có thể sử dụng các tính năng tạo nội dung bằng AI.</p>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Key size={14} /> TỪ KHÓA API (API KEY)
+              </label>
+              <input 
+                type="password" 
+                value={userApiKey}
+                onChange={(e) => setUserApiKey(e.target.value)}
+                placeholder="Nhập API Key ở đây..."
+                className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-sm font-medium focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all placeholder:text-slate-300"
+              />
+            </div>
+            <button 
+              onClick={() => {
+                if (userApiKey.trim()) {
+                  localStorage.setItem('gemini_api_key', userApiKey.trim());
+                  setIsLoggedIn(true);
+                }
+              }}
+              disabled={!userApiKey.trim()}
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_8px_20px_-6px_rgba(5,150,105,0.6)] active:scale-[0.98] uppercase text-sm tracking-wider"
+            >
+              Vào Ứng Dụng
+            </button>
+            <p className="text-center text-xs text-slate-400 mt-4">
+              Bạn chưa có API Key? <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline font-semibold">Lấy Key tại đây</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-zinc-100 flex flex-col overflow-hidden font-inter">
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
@@ -445,6 +496,16 @@ const App = () => {
           </div>
         </div>
         <div className="flex gap-3">
+           <button 
+             onClick={() => {
+               localStorage.removeItem('gemini_api_key');
+               setUserApiKey('');
+               setIsLoggedIn(false);
+             }}
+             className="flex items-center gap-2 bg-slate-100 text-slate-600 px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-200 hover:text-slate-800 transition-all active:scale-95 shadow-sm border border-slate-200"
+           >
+             <LogOut size={16} /> ĐỔI API KEY
+           </button>
            <button 
             onClick={exportPDF}
             disabled={isExporting}
